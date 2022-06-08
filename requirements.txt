@@ -1,0 +1,8 @@
+numpy
+pandas
+xarray
+matplotlib
+netcdf4
+zarr
+dask[complete]
+ipykernel
