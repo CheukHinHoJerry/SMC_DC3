@@ -106,7 +106,7 @@ def train(net, low_res_data, high_res_data, batch_size, lr, device, validation_r
             min_val_loss = val_loss
             # Saving State Dict
             torch.save(net.state_dict(),
-                       './trained_model/model_NS_SDG_m=50_new.pth')
+                       './trained_model/trial_model.pth')
 
         else:
             stop += 1

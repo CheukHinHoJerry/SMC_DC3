@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
+
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True):
         super(UNet, self).__init__()
@@ -38,7 +39,9 @@ class UNet(nn.Module):
         logits = self.outc(x)
         return logits
 
+
 ''' ResNetUNetmodel'''
+
 
 def convrelu(in_channels, out_channels, kernel, padding):
     return nn.Sequential(
@@ -46,6 +49,7 @@ def convrelu(in_channels, out_channels, kernel, padding):
         nn.ReLU(inplace=True),
         # nn.BatchNorm2d(out_channels)
     )
+
 
 class ResNetUNet(nn.Module):
     def __init__(self, n_channels, n_class):
@@ -58,9 +62,16 @@ class ResNetUNet(nn.Module):
         # self.base_model = models.resnet34(pretrained=True)
         self.base_layers = list(self.base_model.children())
 
-        self.layer0 = nn.Sequential(*self.base_layers[:3])
-        self.layer0_1x1 = convrelu(64,64,1,0)
-        self.layer1 = nn.Sequential(*self.base_layers[3:5]) # size=(N, 64, x.H/4, x.W/4)
+        self.layer0 = nn.Sequential(
+                nn.Conv2d(n_channels, 16, 3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(16, 32, 3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(32, 64, 3, padding=1),
+                nn.ReLU(inplace=True),
+            )
+        self.layer0_1x1 = convrelu(64, 64, 1, 0)
+        self.layer1 = nn.Sequential(*self.base_layers[3:5])  # size=(N, 64, x.H/4, x.W/4)
         self.layer1_1x1 = convrelu(64, 64, 1, 0)
         self.layer2 = self.base_layers[5]  # size=(N, 128, x.H/8, x.W/8)
         self.layer2_1x1 = convrelu(128, 128, 1, 0)
@@ -77,14 +88,13 @@ class ResNetUNet(nn.Module):
         self.conv_up1 = convrelu(64 + 256, 256, 3, 1)
         self.conv_up0 = convrelu(64 + 256, 128, 3, 1)
 
-        self.conv_original_size0 = convrelu(3, 64, 3, 1)
+        self.conv_original_size0 = convrelu(n_channels, 64, 3, 1)
         self.conv_original_size1 = convrelu(64, 64, 3, 1)
         self.conv_original_size2 = convrelu(64 + 128, 64, 3, 1)
 
         self.conv_last = nn.Conv2d(64, n_class, 1)
 
     def forward(self, input):
-        print(input.shape)
         x_original = self.conv_original_size0(input)
         x_original = self.conv_original_size1(x_original)
 
@@ -115,8 +125,7 @@ class ResNetUNet(nn.Module):
         x = torch.cat([x, layer0], dim=1)
         x = self.conv_up0(x)
 
-        x = self.upsample(x)
-
+        # x = self.upsample(x)
         x = torch.cat([x, x_original], dim=1)
         x = self.conv_original_size2(x)
 
